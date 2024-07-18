@@ -1,0 +1,1 @@
+The content of this branch test serve as a testing enviornment where all the files from the development environment will be tested in order to guarantee the quality of the work files. The project follows fruits disease image recognition. Work of Lambton College Big Data Analytics DSMM post graduate team
