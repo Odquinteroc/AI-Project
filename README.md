@@ -1,0 +1,1 @@
+This branch (dev) serves as the development environment for the project. All files and changes here are subject to testing in the proper environment by the QA team.This project focuses on the recognition of diseases in fruits using image classification techniques. It is part of the work conducted by the Big Data Analytics DSMM postgraduate team at Lambton College.
