@@ -1,3 +1,1 @@
-The content of this branch Main serve as a production enviornment where all the files and documents would have previously passed a QA testing process.
-The project is based on fruits disease image recognition.
-Work of Lambton College Big Data Analytics DSMM post graduate team
+The content of this branch (main) serve as a production enviornment where all files and documents have previously passed a QA testing process.This project focuses on the recognition of diseases in fruits using image classification techniques. It is part of the work conducted by the Big Data Analytics DSMM postgraduate team at Lambton College.
