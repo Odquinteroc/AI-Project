@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fruit Classification</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+      body {
+        background-color: #f8f9fa;
+        color: #343a40;
+      }
+      .container {
+        margin-top: 20px;
+      }
+      .header-background {
+        background-color: #28a745;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      .image-container img {
+        max-width: 100%;
+        height: auto;
+      }
+      #processing {
+        display: none;
+        font-weight: bold;
+        color: #007bff;
+      }
+      #result {
+        font-size: 24px;
+        font-weight: bold;
+        color: #28a745;
+        text-align: center;
+        margin-top: 20px;
+      }
+      .form-check-label {
+        font-size: 18px;
+      }
+      .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+      }
+      .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+      }
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .card-body {
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header-background text-center">
+        <h1>Upload or Take a Picture to Classify the Fruit</h1>
+      </div>
+      
+      <div id="result" class="text-center mb-4"></div>
+      
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" id="upload_option" name="image_option" value="upload" checked>
+        <label class="form-check-label" for="upload_option">Upload Image</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" id="camera_option" name="image_option" value="camera">
+        <label class="form-check-label" for="camera_option">Use Camera</label>
+      </div>
+      
+      <div id="upload_section" class="mt-4">
+        <form id="upload_form" action="/predict" method="post" enctype="multipart/form-data" class="card">
+          <div class="card-body">
+            <div class="form-group">
+              <input type="file" name="file" id="file_input" class="form-control-file">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload and Predict</button>
+          </div>
+        </form>
+      </div>
+      
+      <div id="camera_section" class="mt-4" style="display:none;">
+        <video id="camera" class="img-fluid mb-2" width="100%" height="auto" autoplay></video>
+        <button id="capture_button" class="btn btn-primary">Capture and Predict</button>
+        <canvas id="snapshot" width="100%" height="auto" style="display:none;"></canvas>
+      </div>
+      
+      <div id="processing" class="text-center mt-4">Processing...</div>
+      
+      <div class="row mt-4">
+        <div class="col-md-4 text-center">
+          <h2>Original Image</h2>
+          <img id="original_image" src="" alt="Original Image" class="img-fluid" style="display:none;">
+        </div>
+        <div class="col-md-4 text-center">
+          <h2>LIME Expl. Img.</h2>
+          <img id="lime_image" src="" alt="LIME Explanation Image" class="img-fluid" style="display:none;">
+        </div>
+        <div class="col-md-4 text-center">
+          <h2>Heatmap Expl. Img.</h2>
+          <img id="heatmap_image" src="" alt="LIME Heatmap Image" class="img-fluid" style="display:none;">
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      document.querySelectorAll('input[name="image_option"]').forEach((elem) => {
+        elem.addEventListener("change", function(event) {
+          const value = event.target.value;
+          if (value === "upload") {
+            document.getElementById('upload_section').style.display = 'block';
+            document.getElementById('camera_section').style.display = 'none';
+          } else if (value === "camera") {
+            document.getElementById('upload_section').style.display = 'none';
+            document.getElementById('camera_section').style.display = 'block';
+            startCamera();
+          }
+        });
+      });
+
+      function startCamera() {
+        const video = document.getElementById('camera');
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+            video.srcObject = stream;
+            video.play();
+          });
+        }
+      }
+
+      document.getElementById('upload_form').onsubmit = async (event) => {
+        event.preventDefault();
+        document.getElementById('processing').style.display = 'block';
+        const formData = new FormData(event.target);
+        const response = await fetch('/predict', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+        document.getElementById('processing').style.display = 'none';
+        document.getElementById('result').innerText = result.result;
+        document.getElementById('original_image').src = result.original_image_url;
+        document.getElementById('original_image').style.display = 'block';
+        document.getElementById('lime_image').src = result.lime_image_url;
+        document.getElementById('lime_image').style.display = 'block';
+        document.getElementById('heatmap_image').src = result.heatmap_image_url;
+        document.getElementById('heatmap_image').style.display = 'block';
+      };
+
+      document.getElementById('capture_button').onclick = async () => {
+        document.getElementById('processing').style.display = 'block';
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('snapshot');
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        const response = await fetch('/predict_camera', {
+          method: 'POST',
+          body: JSON.stringify({ image: dataUrl }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const result = await response.json();
+        document.getElementById('processing').style.display = 'none';
+        document.getElementById('result').innerText = result.result;
+        document.getElementById('original_image').src = result.original_image_url;
+        document.getElementById('original_image').style.display = 'block';
+        document.getElementById('lime_image').src = result.lime_image_url;
+        document.getElementById('lime_image').style.display = 'block';
+        document.getElementById('heatmap_image').src = result.heatmap_image_url;
+        document.getElementById('heatmap_image').style.display = 'block';
+      };
+    </script>
+  </body>
+</html>
+
+
